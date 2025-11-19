@@ -18,7 +18,7 @@ jobs:
         uses: nuget/setup-nuget@v1
 
       - name: Restore dependencies
-        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln
+        run: nuget restore C:\Users\DELL\Mini_Project_Devops\PartsUnlimitedE2E\PartsUnlimited-aspnet45
 
       - name: Build
         run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln /p:Configuration=Release
