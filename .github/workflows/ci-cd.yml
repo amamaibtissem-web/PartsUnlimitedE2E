@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest   
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -18,7 +18,7 @@ jobs:
         uses: nuget/setup-nuget@v1
 
       - name: Restore dependencies
-        run: nuget restore C:\Users\DELL\Mini_Project_Devops\PartsUnlimitedE2E\PartsUnlimited-aspnet45
+        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln
 
       - name: Build
         run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln /p:Configuration=Release
