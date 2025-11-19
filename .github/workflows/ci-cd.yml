@@ -1,4 +1,3 @@
-
 name: CI Pipeline
 
 on:
@@ -10,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,16 +19,17 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
+      - name: List files (diagnostic)
+        run: ls -R
+
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ./PartsUnlimitedE2E.sln
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build ./PartsUnlimitedE2E.sln --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test ./PartsUnlimitedE2E.sln --no-build --verbosity normal
 
       - name: Build Docker image
         run: docker build -t partsunlimited:latest .
-
-
