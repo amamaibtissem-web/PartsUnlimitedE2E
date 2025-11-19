@@ -23,13 +23,13 @@ jobs:
         run: ls -R
 
       - name: Restore dependencies
-        run: dotnet restore ./PartsUnlimitedE2E.sln
+        run: dotnet restore ./PartsUnlimited-aspnet45/PartsUnlimited-aspnet45.csproj
 
       - name: Build
-        run: dotnet build ./PartsUnlimitedE2E.sln --no-restore --configuration Release
+        run: dotnet build ./PartsUnlimited-aspnet45/PartsUnlimited-aspnet45.csproj --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test ./PartsUnlimitedE2E.sln --no-build --verbosity normal
+        run: dotnet test ./PartsUnlimited-aspnet45/PartsUnlimited-aspnet45.csproj --no-build --verbosity normal
 
       - name: Build Docker image
-        run: docker build -t partsunlimited:latest .
+        run: docker build -t partsunlimited:latest ./PartsUnlimited-aspnet45
