@@ -31,5 +31,3 @@ jobs:
       - name: Run tests
         run: dotnet test ./PartsUnlimited-aspnet45/PartsUnlimited-aspnet45.csproj --no-build --verbosity normal
 
-      - name: Build Docker image
-        run: docker build -t partsunlimited:latest ./PartsUnlimited-aspnet45
