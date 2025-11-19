@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline - ASP.NET 4.x
 
 on:
   push:
@@ -8,28 +8,23 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest   
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.0.x'
-
-      - name: List files (diagnostic)
-        run: ls -R
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v1
 
       - name: Restore dependencies
-        run: dotnet restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj
+        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln
 
       - name: Build
-        run: dotnet build ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --no-restore --configuration Release
+        run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln /p:Configuration=Release
 
       - name: Run tests
-        run: dotnet test ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --no-build --verbosity normal
+        run: vstest.console.exe ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/YourTests.dll
 
       - name: Build Docker image
         run: docker build -t partsunlimited:latest ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite
