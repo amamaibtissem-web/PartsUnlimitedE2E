@@ -18,10 +18,10 @@ jobs:
         uses: nuget/setup-nuget@v1
 
       - name: Restore dependencies
-        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln
+        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj
 
       - name: Build
-        run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln /p:Configuration=Release
+        run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj /p:Configuration=Release
 
       - name: Run tests
         run: vstest.console.exe ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/YourTests.dll
