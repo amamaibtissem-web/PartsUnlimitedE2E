@@ -14,31 +14,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # --- Install NuGet ---
       - name: Setup NuGet
         uses: nuget/setup-nuget@v1
 
-      # --- Install MSBuild (IMPORTANT!) ---
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
+      - name: Restore NuGet packages
+        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.sln
 
-      # --- Restore NuGet packages ---
-      - name: Restore dependencies
-        run: nuget restore ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj -PackagesDirectory ./packages
+      - name: Build with MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-      # --- Build the project ---
-      - name: Build
+      - name: Build project
         run: msbuild ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj /p:Configuration=Release
-
-      # --- Run tests (if any) ---
-      - name: Run tests
-        run: |
-          if (Test-Path "./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/YourTests.dll") {
-            vstest.console.exe "./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/YourTests.dll"
-          } else {
-            Write-Host "No tests found."
-          }
-
-      # --- Build Docker image ---
-      - name: Build Docker image
-        run: docker build -t partsunlimited:latest ./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite
