@@ -7,30 +7,22 @@ on:
 jobs:
 
   test:
-    name: Build & Test (.NET Core / 6+)
-    runs-on: ubuntu-latest   
+    name: Build & Test (.NET Framework)
+    runs-on: [self-hosted, windows]   # ← Windows runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.0
-
       - name: Restore NuGet packages
-        run: dotnet restore PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj
+        run: nuget restore "PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj"
 
       - name: Build project
-        run: dotnet build PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --configuration Release
-
-      - name: Publish project
-        run: dotnet publish PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --configuration Release --output ./publish
+        run: msbuild "PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release
 
   build:
     name: Docker Build & Push
     needs: test
-    runs-on: ubuntu-latest   
+    runs-on: [self-hosted, windows]   # ← Windows runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -38,8 +30,8 @@ jobs:
       - name: Docker Hub Login
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}   
-          password: ${{ secrets.DOCKER_PASSWORD }}   
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
         run: |
@@ -54,15 +46,15 @@ jobs:
   deploy:
     name: Azure Deployment
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # Azure peut accepter l’image Windows container
     steps:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}   
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy Container to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "my-azure-webapp"   
+          app-name: "my-azure-webapp"
           images: "${{ secrets.DOCKER_USERNAME }}/my-app:latest"
