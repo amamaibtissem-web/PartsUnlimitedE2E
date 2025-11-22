@@ -7,24 +7,30 @@ on:
 jobs:
 
   test:
-    name: Build & Test (.NET Framework)
-    runs-on: windows-latest   
+    name: Build & Test (.NET Core / 6+)
+    runs-on: ubuntu-latest   
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Restore NuGet packages
-        run: nuget restore "./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0
 
-      - name: Build with MSBuild
-        run: |
-          msbuild "./PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" `
-            /p:Configuration=Release
+      - name: Restore NuGet packages
+        run: dotnet restore PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj
+
+      - name: Build project
+        run: dotnet build PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --configuration Release
+
+      - name: Publish project
+        run: dotnet publish PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj --configuration Release --output ./publish
 
   build:
     name: Docker Build & Push
     needs: test
-    runs-on: windows-latest   
+    runs-on: ubuntu-latest   
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
