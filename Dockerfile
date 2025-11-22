@@ -1,14 +1,11 @@
-# Utiliser une image .NET 6 ASP.NET Core runtime
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+# Utiliser l'image officielle Windows Server Core avec IIS pour ASP.NET 4.x
+FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019
 
-# Créer le dossier pour l'application
-WORKDIR /app
+# Définir le dossier de travail
+WORKDIR /inetpub/wwwroot
 
-# Copier le projet publié (buildé avant)
-COPY PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/net48/publish/ . 
+# Copier le projet publié depuis le runner
+COPY PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/net48/publish/ .
 
-# Exposer le port
+# Exposer le port IIS
 EXPOSE 80
-
-# Lancer l'application
-ENTRYPOINT ["dotnet", "PartsUnlimitedWebsite.dll"]
