@@ -8,7 +8,7 @@ jobs:
 
   test:
     name: Build & Test (.NET Framework)
-    runs-on: [self-hosted, windows]   
+    runs-on: [self-hosted, windows]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -19,23 +19,13 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
 
-      - name: Build solution
+      - name: Build solution (Release | Any CPU)
         run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
-
-      - name: Publish ASP.NET Website
-        run: |
-          msbuild PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj `
-            /p:Configuration=Release `
-            /p:Platform="Any CPU" `
-            /p:DeployOnBuild=true `
-            /p:WebPublishMethod=FileSystem `
-            /p:DeleteExistingFiles=True `
-            /p:publishUrl="PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/net48/publish"
 
   build:
     name: Docker Build & Push
     needs: test
-    runs-on: [self-hosted, windows]   
+    runs-on: [self-hosted, windows]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -45,6 +35,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish ASP.NET 4.5 website
+        run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU" /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:publishUrl="PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/publish"
 
       - name: Build Docker Image
         run: |
