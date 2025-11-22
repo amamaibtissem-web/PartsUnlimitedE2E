@@ -19,8 +19,8 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
 
-      - name: Build solution (Release | x86)
-        run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="x86"
+      - name: Build solution (Release | Any CPU)
+        run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
 
   build:
     name: Docker Build & Push
@@ -37,7 +37,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish ASP.NET 4.5 website
-        run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="x86" /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:publishUrl="PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/publish"
+        run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU" /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:publishUrl="PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin/Release/publish"
 
       - name: Build Docker Image
         run: |
