@@ -8,10 +8,13 @@ jobs:
 
   test:
     name: Build & Test (.NET Framework)
-    runs-on: [self-hosted, windows]   # ← Windows runner
+    runs-on: [self-hosted, windows]   # ← self-hosted Windows runner
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Allow PowerShell scripts
+        run: Set-ExecutionPolicy RemoteSigned -Scope Process
 
       - name: Restore NuGet packages
         run: nuget restore "PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj"
@@ -22,7 +25,7 @@ jobs:
   build:
     name: Docker Build & Push
     needs: test
-    runs-on: [self-hosted, windows]   # ← Windows runner
+    runs-on: [self-hosted, windows]   # ← Docker Windows containers
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -46,7 +49,7 @@ jobs:
   deploy:
     name: Azure Deployment
     needs: build
-    runs-on: ubuntu-latest   # Azure peut accepter l’image Windows container
+    runs-on: ubuntu-latest   # Azure Web App accepte l'image Windows container
     steps:
       - name: Azure Login
         uses: azure/login@v1
