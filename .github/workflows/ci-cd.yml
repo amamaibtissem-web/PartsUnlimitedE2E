@@ -17,7 +17,7 @@ jobs:
         run: Set-ExecutionPolicy RemoteSigned -Scope Process
 
       - name: Restore NuGet packages
-        run: nuget restore "PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj"
+        run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
 
       - name: Build project
         run: msbuild "PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release
