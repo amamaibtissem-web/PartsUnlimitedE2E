@@ -1,30 +1,41 @@
-name: CI Build PartsUnlimited
+name: CI Build PartsUnlimitedE2E
 
 on:
   push:
-    branches: [ release ]
+    branches:
+      - release
   pull_request:
-    branches: [ release ]
+    branches:
+      - release
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.1.1
+      - name: List files
+        run: dir $env:GITHUB_WORKSPACE /s
 
-    - name: Restore NuGet packages
-      run: nuget restore $env:GITHUB_WORKSPACE\PartsUnlimited.sln
+      - name: Restore NuGet packages
+        run: nuget restore $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\PartsUnlimitedWebsite.sln
 
-    - name: Build solution
-      uses: microsoft/setup-msbuild@v1.1
-    - run: msbuild $env:GITHUB_WORKSPACE\PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
+      - name: Build solution
+        run: msbuild $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\PartsUnlimitedWebsite.sln /p:Configuration=Release
 
-    - name: Run Unit Tests
-      shell: pwsh
-      run: |
-        $testAssemblies = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\**\bin\R**_
+      - name: Run tests
+        run: |
+          # Cherche tous les fichiers de tests .dll générés
+          $testDlls = Get-ChildItem "$env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\**\*Tests.dll" -Recurse
+          foreach ($dll in $testDlls) {
+            Write-Host "Running tests in $dll"
+            vstest.console.exe $dll
+          }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PartsUnlimitedE2E-Build
+          path: $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\bin\Release\
