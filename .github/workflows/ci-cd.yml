@@ -1,49 +1,38 @@
-name: CI-CD
+name: Build PartsUnlimitedE2E
 
 on:
   push:
-    branches: [ "release" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "release" ]
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: [self-hosted, windows]
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Restore NuGet packages
-        run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
-      - name: Build Web App (ignore DepValidation)
-        shell: powershell
-        run: |
-          msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln `
-            /t:Build `
-            /p:Configuration=Release `
-            /p:SkipInvalidConfigurations=true `
-            /p:BuildProjectReferences=false `
-            /p:Exclude="PartsUnlimited.DepValidation" `
-            /m
+    - name: Restore NuGet packages
+      shell: powershell
+      run: nuget restore PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln
 
-      - name: Build Unit Tests (.NET 4.5.2)
-        shell: powershell
-        continue-on-error: true
-        run: |
-          msbuild PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj `
-            /p:Configuration=Release
+    - name: Build solution with MSBuild
+      shell: powershell
+      run: |
+        $msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+        & $msbuildPath "PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln" `
+          /t:Build `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /m
 
-      - name: Build Selenium Tests (.NET 4.6.1)
-        shell: powershell
-        continue-on-error: true
-        run: |
-          msbuild PartsUnlimited-aspnet45/test/FabrikamFiber.SeleniumTests/FabrikamFiber.SeleniumTests.csproj `
-            /p:Configuration=Release
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: PartsUnlimited-Build
+        path: PartsUnlimitedE2E/PartsUnlimited-aspnet45/bin/Release/
