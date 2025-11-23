@@ -1,10 +1,12 @@
-name: Build PartsUnlimitedE2E
+name: CI Build PartsUnlimited
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,27 +14,17 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
 
     - name: Restore NuGet packages
-      shell: powershell
-      run: nuget restore PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln
+      run: nuget restore PartsUnlimited.sln
 
-    - name: Build solution with MSBuild
-      shell: powershell
-      run: |
-        $msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
-        & $msbuildPath "PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln" `
-          /t:Build `
-          /p:Configuration=Release `
-          /p:Platform="Any CPU" `
-          /m
+    - name: Build PartsUnlimitedWebsite project (Release, .NET 4.8)
+      run: msbuild "src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release /p:Platform="Any CPU"
 
-    - name: Publish artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: PartsUnlimited-Build
-        path: PartsUnlimitedE2E/PartsUnlimited-aspnet45/bin/Release/
+    - name: Build DepValidation project (Release, .NET 4.8)
+      run: msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU"
+
