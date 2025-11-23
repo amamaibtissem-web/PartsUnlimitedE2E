@@ -14,7 +14,6 @@ jobs:
 
     - name: Install .NET Framework 4.6.1 Dev Pack
       run: choco install netfx-4.6.1-devpack -y
-      shell: pwsh
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
@@ -22,21 +21,19 @@ jobs:
     - name: Restore NuGet Packages
       run: |
         $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-        if (Test-Path $slnPath) {
-          nuget restore $slnPath
-        } else {
-          Write-Error "Solution file not found: $slnPath"
-        }
+        nuget restore $slnPath
       shell: pwsh
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Website Only (Skip DepValidation)
-      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
+      run: |
+        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
+          /t:Rebuild /p:Configuration=Release
       shell: pwsh
 
     - name: Build Docker Image
-      run: docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+      run: |
+        docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
       shell: pwsh
-
