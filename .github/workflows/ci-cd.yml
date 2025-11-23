@@ -1,4 +1,4 @@
-name: CI .NET Framework 4.8
+name: CI .NET Framework 4.8 Optimized
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
       - develop
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
 
     steps:
@@ -24,15 +24,20 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore PartsUnlimited.sln
 
-      - name: Build PartsUnlimitedWebsite
-        run: msbuild "src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
-
-      - name: Build PartsUnlimited.DepValidation
-        run: msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
-
-      - name: Build UnitTests
-        run: msbuild "test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
-
-      - name: Run Unit Tests
+      - name: Build All Projects
         run: |
-          vstest.console.exe "test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll" /Logger:trx
+          msbuild "src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
+          msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
+          msbuild "test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
+
+      - name: Run Unit Tests and Publish Results
+        run: |
+          mkdir TestResults
+          vstest.console.exe "test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll" /Logger:trx;LogFileName=TestResults\TestResults.trx
+        continue-on-error: false
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestResults
+          path: TestResults/TestResults.trx
