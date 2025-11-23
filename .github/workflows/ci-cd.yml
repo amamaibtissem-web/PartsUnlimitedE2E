@@ -17,7 +17,7 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      - name: Restore NuGet
+      - name: Restore NuGet Packages
         run: |
           $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
           Write-Host "Restoring NuGet packages for $slnPath"
