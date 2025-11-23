@@ -30,8 +30,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\tests\PartsUnlimited.Tests\bin\Release\PartsUnlimited.Tests.dll"
-          & "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" $testDll
+          vstest.console.exe "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" /Platform:x64 /Framework:Framework45
         shell: pwsh
 
   build:
