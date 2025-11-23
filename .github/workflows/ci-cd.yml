@@ -3,7 +3,7 @@ name: CI-CD
 on:
   push:
     branches:
-      - release
+      - main
   pull_request:
 
 jobs:
@@ -14,6 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Vérifier l'arborescence du repo (optionnel pour debug)
+      - name: List repo files
+        run: dir $env:GITHUB_WORKSPACE /s
+        shell: pwsh
+
       - name: Install .NET Framework 4.6.1 Dev Pack
         run: choco install netfx-4.6.1-devpack -y
 
@@ -22,8 +27,8 @@ jobs:
 
       - name: Restore NuGet Packages
         run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-          nuget restore $slnPath
+          cd "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+          nuget restore PartsUnlimited.sln
         shell: pwsh
 
       - name: Setup MSBuild
@@ -31,16 +36,17 @@ jobs:
 
       - name: Build Website and Tests
         run: |
+          cd "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
           # Build Website
-          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
+          msbuild "src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
           # Build Tests
-          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" /t:Rebuild /p:Configuration=Release
+          msbuild "test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" /t:Rebuild /p:Configuration=Release
         shell: pwsh
 
       - name: Run Unit Tests
         run: |
           $vstestPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
-          $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
+          $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
           & $vstestPath $testDll /Platform:x64 /Framework:Framework45
         shell: pwsh
 
