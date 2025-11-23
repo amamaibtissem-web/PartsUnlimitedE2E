@@ -1,44 +1,34 @@
-name: CI - ASP.NET Framework
+name: CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ release ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ release ]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: List all files in repo
-      run: |
-        echo "Root path: $GITHUB_WORKSPACE"
-        dir $GITHUB_WORKSPACE /s
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
 
+      - name: Restore NuGet packages
+        shell: pwsh
+        run: |
+          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+          Write-Host "Restoring NuGet packages for $slnPath"
+          nuget restore $slnPath
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
 
-    - name: Restore NuGet packages
-      run: nuget restore 'PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln'
-
-    - name: Build solution
-      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln' /p:Configuration=Release
-
-    - name: Build
-      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited.sln' /p:Configuration=Release
-
-    - name: Run unit tests
-      run: |
-        nuget restore 'PartsUnlimitedE2E/PartsUnlimited.sln'
-        "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\MSTest.exe" /testcontainer:"PartsUnlimitedE2E/test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll"
-
-    - name: Publish artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: '**/bin/Release/**'
+      - name: Build solution
+        shell: pwsh
+        run: |
+          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+          msbuild $slnPath /p:Configuration=Release
