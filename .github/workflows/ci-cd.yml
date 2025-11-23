@@ -1,4 +1,4 @@
-name: CI-CD
+name: CI/CD
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Install .NET Framework 4.6.1 Dev Pack
@@ -27,7 +27,7 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build Website (Release)
+    - name: Build Website Only (Skip DepValidation)
       run: |
         msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
           /t:Rebuild /p:Configuration=Release
@@ -35,7 +35,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t $env:DOCKER_USERNAME/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
       shell: pwsh
 
     - name: Login to Docker Hub
@@ -45,22 +45,24 @@ jobs:
 
     - name: Push Docker Image
       run: |
-        docker push $env:DOCKER_USERNAME/partsunlimited-web:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest
       shell: pwsh
-
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
     - name: Log in to Azure
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Deploy to Azure Web App for Containers
+    - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'my-azure-webapp-name'   # 🔵 Remplace par ton nom exact
+        app-name: 'my-azure-webapp'
         images: '${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest'
