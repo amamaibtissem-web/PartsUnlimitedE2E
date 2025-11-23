@@ -28,8 +28,10 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Build solution
-        shell: pwsh
+      - name: Build Solution
         run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimited.sln"
+          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+          Write-Host "Building solution at $slnPath"
           msbuild $slnPath /p:Configuration=Release
+        shell: pwsh
+
