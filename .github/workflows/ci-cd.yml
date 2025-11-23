@@ -1,4 +1,4 @@
-name: CI Build PartsUnlimitedE2E
+name: CI-CD PartsUnlimitedE2E
 
 on:
   push:
@@ -13,29 +13,45 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: List files
-        run: dir $env:GITHUB_WORKSPACE /s
+    - name: List files in workspace
+      shell: pwsh
+      run: |
+        Write-Host "GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE"
+        Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse
 
-      - name: Restore NuGet packages
-        run: nuget restore $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\PartsUnlimitedWebsite.sln
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
 
-      - name: Build solution
-        run: msbuild $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\PartsUnlimitedWebsite.sln /p:Configuration=Release
+    - name: Restore NuGet packages
+      shell: pwsh
+      run: |
+        # Mettre le chemin correct vers le fichier .sln détecté précédemment
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln"
+        if (Test-Path $slnPath) {
+            dotnet restore $slnPath
+        } else {
+            Write-Error "Le fichier .sln n'a pas été trouvé: $slnPath"
+            exit 1
+        }
 
-      - name: Run tests
-        run: |
-          # Cherche tous les fichiers de tests .dll générés
-          $testDlls = Get-ChildItem "$env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\**\*Tests.dll" -Recurse
-          foreach ($dll in $testDlls) {
-            Write-Host "Running tests in $dll"
-            vstest.console.exe $dll
-          }
+    - name: Build solution
+      shell: pwsh
+      run: |
+        dotnet build "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln" --configuration Release
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: PartsUnlimitedE2E-Build
-          path: $env:GITHUB_WORKSPACE\PartsUnlimitedWebsite\bin\Release\
+    - name: Run tests
+      shell: pwsh
+      run: |
+        dotnet test "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln" --no-build --verbosity normal
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          $env:GITHUB_WORKSPACE\PartsUnlimitedE2E\**\bin\Release\
