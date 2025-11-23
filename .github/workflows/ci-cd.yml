@@ -1,43 +1,42 @@
-name: CI .NET Framework 4.8 Optimized
+name: CI/CD PartsUnlimited
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ release ]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [ release ]
 
 jobs:
   build-and-test:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
-      - name: Restore NuGet packages
-        run: nuget restore PartsUnlimited.sln
+    - name: Restore NuGet packages
+      run: nuget restore PartsUnlimited.sln
 
-      - name: Build All Projects
-        run: |
-          msbuild "src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
-          msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
-          msbuild "test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8 /m
+    - name: Setup MSBuild path
+      uses: microsoft/setup-msbuild@v1
 
-      - name: Run Unit Tests and Publish Results
-        run: |
-          mkdir TestResults
-          vstest.console.exe "test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll" /Logger:trx;LogFileName=TestResults\TestResults.trx
-        continue-on-error: false
+    - name: Build solution
+      run: msbuild PartsUnlimited.sln /p:Configuration=Release
 
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: TestResults
-          path: TestResults/TestResults.trx
+    - name: Run Unit Tests
+      run: |
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\MSTest.exe" /testcontainer:test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll
+
+  publish:
+    runs-on: windows-latest
+    needs: build-and-test
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Publish website
+      run: |
+        msbuild src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj /p:DeployOnBuild=true /p:PublishProfile=FolderProfile /p:Configuration=Release
