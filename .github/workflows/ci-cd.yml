@@ -36,7 +36,7 @@ jobs:
       run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
       shell: pwsh
 
- #   - name: Build Docker Image
-    #  run: |
-      #  docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
-        #shell: pwsh
+    - name: Build Docker Image
+      run: docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+      shell: pwsh
+
