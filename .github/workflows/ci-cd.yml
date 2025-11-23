@@ -1,4 +1,4 @@
-name: CI-CD Pipeline
+name: CI Build PartsUnlimited
 
 on:
   push:
@@ -12,28 +12,19 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: List files for debug
-      run: dir /s
+      uses: actions/checkout@v4
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
+      uses: NuGet/setup-nuget@v1.1.1
 
     - name: Restore NuGet packages
-      run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
+      run: nuget restore $env:GITHUB_WORKSPACE\PartsUnlimited.sln
 
     - name: Build solution
-      run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
+      uses: microsoft/setup-msbuild@v1.1
+    - run: msbuild $env:GITHUB_WORKSPACE\PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Run Unit Tests
+      shell: pwsh
       run: |
-        echo "Running MSTest tests..."
-        vstest.console.exe PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll
-
-    - name: Publish Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: TestResults
-        path: PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/TestResults/
+        $testAssemblies = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\**\bin\R**_
