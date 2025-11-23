@@ -1,42 +1,39 @@
-name: CI/CD PartsUnlimited
+name: CI-CD Pipeline
 
 on:
   push:
-    branches: [ release ]
+    branches: [ main ]
   pull_request:
-    branches: [ release ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: windows-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: List files for debug
+      run: dir /s
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
 
     - name: Restore NuGet packages
-      run: nuget restore PartsUnlimited.sln
-
-    - name: Setup MSBuild path
-      uses: microsoft/setup-msbuild@v1
+      run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
 
     - name: Build solution
-      run: msbuild PartsUnlimited.sln /p:Configuration=Release
+      run: msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Run Unit Tests
       run: |
-        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\MSTest.exe" /testcontainer:test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll
+        echo "Running MSTest tests..."
+        vstest.console.exe PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll
 
-  publish:
-    runs-on: windows-latest
-    needs: build-and-test
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Publish website
-      run: |
-        msbuild src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj /p:DeployOnBuild=true /p:PublishProfile=FolderProfile /p:Configuration=Release
+    - name: Publish Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: TestResults
+        path: PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/TestResults/
