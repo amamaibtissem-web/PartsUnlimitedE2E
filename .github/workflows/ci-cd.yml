@@ -11,37 +11,37 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install .NET Framework 4.6.1 Dev Pack
-      run: choco install netfx-4.6.1-devpack -y
+    - name: Install .NET Framework 4.8 Developer Pack
+      run: choco install netfx-4.8-devpack -y
 
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
 
     - name: Restore NuGet Packages
       run: |
-        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln"
         nuget restore $slnPath
       shell: pwsh
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build Website Only (Skip DepValidation)
+    - name: Build all projects in Release
       run: |
-        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
-          /t:Rebuild /p:Configuration=Release
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+        msbuild $slnPath /t:Rebuild /p:Configuration=Release
+      shell: pwsh
+
+    - name: List test output folder
+      run: dir "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release" /s
       shell: pwsh
 
     - name: Run Unit Tests
       run: |
-        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
-        if (Test-Path $testDll) {
-            & "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" $testDll /Platform:x64 /Framework:Framework45
-        } else {
-            Write-Error "Test DLL not found: $testDll"
-            exit 1
-        }
+        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
+        Write-Host "Running tests from $testDll"
+        & "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" $testDll /Platform:x64 /Framework:Framework45
       shell: pwsh
