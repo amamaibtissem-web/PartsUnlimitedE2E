@@ -1,12 +1,13 @@
-name: CI
+name: CI-CD
 
 on:
   push:
     branches:
-      - release
+      - main
   pull_request:
 
 jobs:
+
   test:
     runs-on: windows-latest
     steps:
@@ -42,41 +43,13 @@ jobs:
           $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
           & $vstestPath $testDll /Platform:x64 /Framework:Framework45
         shell: pwsh
-      
-      test:
-        runs-on: windows-latest
-        steps:
-          - name: Checkout
-            uses: actions/checkout@v3
-
-          - name: Install .NET Framework 4.6.1 Dev Pack
-            run: choco install netfx-4.6.1-devpack -y
-
-          - name: Setup NuGet
-            uses: NuGet/setup-nuget@v1
-
-          - name: Restore NuGet Packages
-            run: |
-              $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-              nuget restore $slnPath
-            shell: pwsh
-
-          - name: Setup MSBuild
-            uses: microsoft/setup-msbuild@v2
-            
 
   build:
     needs: test
     runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Build Website Only (Skip DepValidation)
-        run: |
-          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
-            /t:Rebuild /p:Configuration=Release
-        shell: pwsh
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
