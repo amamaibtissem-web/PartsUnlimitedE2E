@@ -18,13 +18,13 @@ jobs:
       uses: NuGet/setup-nuget@v1.1.1
 
     - name: Restore NuGet packages
-      run: nuget restore $env:GITHUB_WORKSPACE\PartsUnlimited.sln
+      run: nuget restore $env:PartsUnlimited-aspnet45/PartsUnlimited.sln
 
     - name: Build solution
       uses: microsoft/setup-msbuild@v1.1
-    - run: msbuild $env:GITHUB_WORKSPACE\PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
+    - run: msbuild $env:PartsUnlimited-aspnet45\PartsUnlimited.sln /p:Configuration=Release /p:Platform="Any CPU"
 
     - name: Run Unit Tests
       shell: pwsh
       run: |
-        $testAssemblies = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\**\bin\R**_
+        $testAssemblies = Get-ChildItem -Path "$env:https://github.com/amamaibtissem-web/PartsUnlimitedE2E/tree/master/PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj"
