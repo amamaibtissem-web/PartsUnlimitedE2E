@@ -1,49 +1,38 @@
-name: CI-CD
+name: CI .NET Framework 4.8
 
 on:
   push:
-    branches: [ "release" ]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [ "release" ]
+    branches:
+      - main
+      - develop
 
 jobs:
   build:
-    runs-on: [self-hosted, windows]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
 
       - name: Restore NuGet packages
-        run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
+        run: nuget restore PartsUnlimited.sln
 
-      - name: Build Web App (ignore DepValidation)
-        shell: powershell
+      - name: Build PartsUnlimitedWebsite
+        run: msbuild "src/PartsUnlimitedWebsite/PartsUnlimitedWebsite.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
+
+      - name: Build PartsUnlimited.DepValidation
+        run: msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
+
+      - name: Build UnitTests
+        run: msbuild "test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj" /p:Configuration=Release /p:Platform="Any CPU" /p:TargetFrameworkVersion=v4.8
+
+      - name: Run Unit Tests
         run: |
-          msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln `
-            /t:Build `
-            /p:Configuration=Release `
-            /p:SkipInvalidConfigurations=true `
-            /p:BuildProjectReferences=false `
-            /p:Exclude="PartsUnlimited.DepValidation" `
-            /m
-
-      - name: Build Unit Tests (.NET 4.5.2)
-        shell: powershell
-        continue-on-error: true
-        run: |
-          msbuild PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj `
-            /p:Configuration=Release
-
-      - name: Build Selenium Tests (.NET 4.6.1)
-        shell: powershell
-        continue-on-error: true
-        run: |
-          msbuild PartsUnlimited-aspnet45/test/FabrikamFiber.SeleniumTests/FabrikamFiber.SeleniumTests.csproj `
-            /p:Configuration=Release
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: PartsUnlimited-aspnet45/src/PartsUnlimitedWebsite/bin
+          vstest.console.exe "test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll" /Logger:trx
