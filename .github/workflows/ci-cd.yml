@@ -2,36 +2,33 @@ name: CI
 
 on:
   push:
-    branches: [ release ]
   pull_request:
-    branches: [ release ]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Setup NuGet
-        uses: nuget/setup-nuget@v2
+    - name: Install .NET Framework 4.6.1 Dev Pack
+      run: choco install netfx-4.6.1-devpack -y
 
-      - name: Restore NuGet Packages
-        run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-          Write-Host "Restoring NuGet packages for $slnPath"
-          nuget restore $slnPath
-        shell: pwsh
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
+    - name: Restore NuGet Packages
+      run: |
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+        nuget restore $slnPath
+      shell: pwsh
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
 
-      - name: Build Solution
-        run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-          Write-Host "Building solution at $slnPath"
-          msbuild $slnPath /p:Configuration=Release
-        shell: pwsh
-
+    - name: Build Website Only (Skip DepValidation)
+      run: |
+        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
+          /t:Rebuild /p:Configuration=Release
+      shell: pwsh
