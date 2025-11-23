@@ -1,4 +1,4 @@
-name: CI
+name: CI-CD
 
 on:
   push:
@@ -27,13 +27,40 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build Website Only (Skip DepValidation)
+    - name: Build Website (Release)
       run: |
         msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
           /t:Rebuild /p:Configuration=Release
       shell: pwsh
-# docker
+
     - name: Build Docker Image
       run: |
-        docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+        docker build -t $env:DOCKER_USERNAME/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
       shell: pwsh
+
+    - name: Login to Docker Hub
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      shell: pwsh
+
+    - name: Push Docker Image
+      run: |
+        docker push $env:DOCKER_USERNAME/partsunlimited-web:latest
+      shell: pwsh
+
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Web App for Containers
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'my-azure-webapp-name'   # 🔵 Remplace par ton nom exact
+        images: '${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest'
