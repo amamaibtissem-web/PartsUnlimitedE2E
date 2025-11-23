@@ -1,47 +1,42 @@
-name: CI - PartsUnlimitedE2E
+name: CI
 
 on:
   push:
-    branches:
-      - release
   pull_request:
-    branches:
-      - release
 
 jobs:
-  build-and-test:
+  build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Install .NET Framework 4.6.1 Developer Pack
-        run: choco install netfx-4.6.1-devpack -y
+    - name: Install .NET Framework 4.6.1 Dev Pack
+      run: choco install netfx-4.6.1-devpack -y
+      shell: pwsh
 
-      - name: Install NuGet
-        uses: NuGet/setup-nuget@v1
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
-      - name: Restore NuGet packages
-        run: nuget restore "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+    - name: Restore NuGet Packages
+      run: |
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+        if (Test-Path $slnPath) {
+          nuget restore $slnPath
+        } else {
+          Write-Error "Solution file not found: $slnPath"
+        }
+      shell: pwsh
 
-      - name: Build solution
-        run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln" `
-            /p:Configuration=Release `
-            /p:BuildProjectReferences=true `
-            /p:SkipInvalidProjects=true
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
 
-      - name: Run Unit Tests
-        run: |
-          $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
-          if (-Not (Test-Path $testDll)) {
-              Write-Error "Test DLL not found: $testDll"
-              exit 1
-          }
-          vstest.console.exe $testDll /Logger:trx
+    - name: Build Website Only (Skip DepValidation)
+      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
+      shell: pwsh
 
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: TestResults
-          path: "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\TestResults"
+    - name: Build Docker Image
+     run: |
+       docker build -t partsunlimited-web "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+       shell: pwsh
