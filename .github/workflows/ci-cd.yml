@@ -18,11 +18,10 @@ jobs:
       uses: NuGet/setup-nuget@v1
 
     - name: Restore NuGet packages
-      run: nuget restore 'PartsUnlimitedE2E/PartsUnlimited.sln'
+      run: nuget restore 'PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln'
 
     - name: Build solution
-      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited.sln' /p:Configuration=Release
-
+      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited-aspnet45/PartsUnlimited.sln' /p:Configuration=Release
 
     - name: Build
       run: msbuild 'PartsUnlimitedE2E/PartsUnlimited.sln' /p:Configuration=Release
