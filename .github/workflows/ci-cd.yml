@@ -1,36 +1,47 @@
-name: Build and Test PartsUnlimitedE2E
+name: CI - PartsUnlimitedE2E
 
 on:
   push:
-    branches: [ release ]
+    branches:
+      - release
   pull_request:
-    branches: [ release ]
+    branches:
+      - release
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.1.1
+      - name: Install .NET Framework 4.6.1 Developer Pack
+        run: choco install netfx-4.6.1-devpack -y
 
-    - name: Restore NuGet packages
-      run: nuget restore "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+      - name: Install NuGet
+        uses: NuGet/setup-nuget@v1
 
-    - name: Setup MSBuild path
-      uses: microsoft/setup-msbuild@v1.1.2
+      - name: Restore NuGet packages
+        run: nuget restore "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
 
-    - name: Build solution
-      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln" /p:Configuration=Release
+      - name: Build solution
+        run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln" `
+            /p:Configuration=Release `
+            /p:BuildProjectReferences=true `
+            /p:SkipInvalidProjects=true
 
-    - name: Run unit tests
-      run: |
-        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
-        if (!(Test-Path $testDll)) {
-          Write-Error "Test DLL not found: $testDll"
-          exit 1
-        }
-        vstest.console.exe $testDll
+      - name: Run Unit Tests
+        run: |
+          $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
+          if (-Not (Test-Path $testDll)) {
+              Write-Error "Test DLL not found: $testDll"
+              exit 1
+          }
+          vstest.console.exe $testDll /Logger:trx
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestResults
+          path: "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\TestResults"
