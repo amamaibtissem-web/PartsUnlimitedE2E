@@ -1,4 +1,4 @@
-name: CI
+name: CI - ASP.NET Framework
 
 on:
   push:
@@ -14,37 +14,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '7.0.x' 
-
-    - name: Find solution file
-      id: find_sln
-      shell: pwsh
-      run: |
-        $slnFiles = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln"
-        if ($slnFiles.Count -eq 0) {
-            Write-Error "Aucun fichier .sln trouvé dans le repository !"
-            exit 1
-        } else {
-            Write-Host "Fichier .sln trouvé : $($slnFiles[0].FullName)"
-            echo "sln_path=$($slnFiles[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
-        }
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
     - name: Restore NuGet packages
-      shell: pwsh
-      run: dotnet restore $env:sln_path
+      run: nuget restore 'PartsUnlimitedE2E/PartsUnlimited.sln'
 
     - name: Build solution
-      shell: pwsh
-      run: dotnet build $env:sln_path --configuration Release --no-restore
+      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited.sln' /p:Configuration=Release
 
-    - name: Run tests
-      shell: pwsh
-      run: dotnet test $env:sln_path --no-build --verbosity normal
 
-    - name: Publish build artifacts
+    - name: Build
+      run: msbuild 'PartsUnlimitedE2E/PartsUnlimited.sln' /p:Configuration=Release
+
+    - name: Run unit tests
+      run: |
+        nuget restore 'PartsUnlimitedE2E/PartsUnlimited.sln'
+        "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\MSTest.exe" /testcontainer:"PartsUnlimitedE2E/test/PartsUnlimited.UnitTests/bin/Release/PartsUnlimited.UnitTests.dll"
+
+    - name: Publish artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
