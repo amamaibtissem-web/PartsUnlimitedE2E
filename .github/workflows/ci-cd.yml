@@ -17,12 +17,13 @@ jobs:
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
 
-      - name: Restore NuGet packages
-        shell: pwsh
+      - name: Restore NuGet
         run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimited.sln"
+          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
           Write-Host "Restoring NuGet packages for $slnPath"
           nuget restore $slnPath
+        shell: pwsh
+
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
