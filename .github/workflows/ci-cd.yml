@@ -1,42 +1,48 @@
-name: CI-CD
+name: CI
 
 on:
   push:
-    branches:
-      - release
+    branches: [ release ]
   pull_request:
 
 jobs:
-
-  test:
+  build-and-test:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: List repo files
-        run: Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse
-        shell: pwsh
+    - name: Install .NET Framework 4.8 Developer Pack
+      run: choco install netfx-4.8-devpack -y
 
-      - name: Install .NET Framework 4.6.1 Dev Pack
-        run: choco install netfx-4.6.1-devpack -y
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1
+    - name: Restore NuGet packages
+      run: |
+        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+        nuget restore $slnPath
+      shell: pwsh
 
-      - name: Restore NuGet Packages
-        run: |
-          cd "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
-          nuget restore PartsUnlimited.sln
-        shell: pwsh
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+    - name: Build main project
+      run: |
+        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
+          /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU"
+      shell: pwsh
 
-      - name: Build Website and Tests
-        run: |
-          cd "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
-          # Build Website
-          msbuild "src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
-          # Build Tests
-          msbuild "test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj"
+    - name: Build Unit Tests
+      run: |
+        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" `
+          /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU"
+      shell: pwsh
+
+    - name: Run Unit Tests
+      run: |
+        $vstestPath = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
+        & $vstestPath $testDll /Platform:x64 /Framework:Framework48
+      shell: pwsh
