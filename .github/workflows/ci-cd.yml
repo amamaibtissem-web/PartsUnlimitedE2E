@@ -1,54 +1,37 @@
-name: CI
+name: Build and Test PartsUnlimitedE2E
 
 on:
   push:
-    branches:
-      - release
+    branches: [ release ]
   pull_request:
-    branches:
-      - release
+    branches: [ release ]
 
 jobs:
   build-and-test:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install .NET Framework 4.6.1 Dev Pack
-      run: choco install netfx-4.6.1-devpack -y
-
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
+      uses: nuget/setup-nuget@v1
 
-    - name: Restore NuGet Packages
+    - name: Restore NuGet packages
+      run: nuget restore "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+
+    - name: Clean solution
+      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\PartsUnlimited.sln" /t:Clean /p:Configuration=Release
+
+    - name: Build main project
+      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
+
+    - name: Build unit tests
+      run: msbuild "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" /t:Rebuild /p:Configuration=Release
+
+    - name: Run unit tests
       run: |
-        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-        nuget restore $slnPath
-      shell: pwsh
-
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Build Website
-      run: |
-        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
-          /t:Rebuild /p:Configuration=Release
-      shell: pwsh
-
-    - name: Build Unit Tests
-      run: |
-        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\PartsUnlimited.UnitTests.csproj" `
-          /t:Rebuild /p:Configuration=Release
-      shell: pwsh
-
-    - name: Run Unit Tests
-      run: |
-        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
-        if (-Not (Test-Path $testDll)) {
-          Write-Error "Test DLL not found: $testDll"
-          exit 1
-        }
-        & "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" $testDll /Platform:x64 /Framework:Framework45
+        $testDll = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited-aspnet45\test\PartsUnlimited.UnitTests\bin\Release\PartsUnlimited.UnitTests.dll"
+        if (!(Test-Path $testDll)) { Write-Error "Test DLL not found: $testDll"; exit 1 }
+        & "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" $testDll
       shell: pwsh
