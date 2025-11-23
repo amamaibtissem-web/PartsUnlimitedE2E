@@ -28,3 +28,6 @@ jobs:
     - name: Build DepValidation project (Release, .NET 4.8)
       run: msbuild "PartsUnlimited.DepValidation/PartsUnlimited.DepValidation.modelproj" /p:Configuration=Release /p:Platform="Any CPU"
 
+    # Si plus tard tu veux activer les tests unitaires (après migration 4.8)
+    #- name: Build Unit Tests (Release, .NET 4.8)
+    #  run: msbuild "test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj" /p:Configuration=Release /p:Platform="Any CPU"
