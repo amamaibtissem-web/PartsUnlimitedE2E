@@ -8,35 +8,38 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, windows, X64]
+    runs-on: [self-hosted, windows]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Restore NuGet packages
         run: nuget restore PartsUnlimited-aspnet45/PartsUnlimited.sln
 
       - name: Build Web App (ignore DepValidation)
+        shell: powershell
         run: |
-          msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln ^
-            /t:Build ^
-            /p:Configuration=Release ^
-            /p:SkipInvalidConfigurations=true ^
-            /p:BuildProjectReferences=false ^
-            /p:Exclude="PartsUnlimited.DepValidation" ^
+          msbuild PartsUnlimited-aspnet45/PartsUnlimited.sln `
+            /t:Build `
+            /p:Configuration=Release `
+            /p:SkipInvalidConfigurations=true `
+            /p:BuildProjectReferences=false `
+            /p:Exclude="PartsUnlimited.DepValidation" `
             /m
 
       - name: Build Unit Tests (.NET 4.5.2)
+        shell: powershell
         continue-on-error: true
         run: |
-          msbuild PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj ^
+          msbuild PartsUnlimited-aspnet45/test/PartsUnlimited.UnitTests/PartsUnlimited.UnitTests.csproj `
             /p:Configuration=Release
 
       - name: Build Selenium Tests (.NET 4.6.1)
+        shell: powershell
         continue-on-error: true
         run: |
-          msbuild PartsUnlimited-aspnet45/test/FabrikamFiber.SeleniumTests/FabrikamFiber.SeleniumTests.csproj ^
+          msbuild PartsUnlimited-aspnet45/test/FabrikamFiber.SeleniumTests/FabrikamFiber.SeleniumTests.csproj `
             /p:Configuration=Release
 
       - name: Archive artifacts
