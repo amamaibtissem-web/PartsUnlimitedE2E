@@ -1,12 +1,10 @@
-name: CI-CD PartsUnlimitedE2E
+name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "release" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "release" ]
 
 jobs:
   build:
@@ -14,44 +12,40 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: List files in workspace
-      shell: pwsh
-      run: |
-        Write-Host "GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE"
-        Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse
+      uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: '7.0.x' 
+
+    - name: Find solution file
+      id: find_sln
+      shell: pwsh
+      run: |
+        $slnFiles = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.sln"
+        if ($slnFiles.Count -eq 0) {
+            Write-Error "Aucun fichier .sln trouvé dans le repository !"
+            exit 1
+        } else {
+            Write-Host "Fichier .sln trouvé : $($slnFiles[0].FullName)"
+            echo "sln_path=$($slnFiles[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+        }
 
     - name: Restore NuGet packages
       shell: pwsh
-      run: |
-        # Mettre le chemin correct vers le fichier .sln détecté précédemment
-        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln"
-        if (Test-Path $slnPath) {
-            dotnet restore $slnPath
-        } else {
-            Write-Error "Le fichier .sln n'a pas été trouvé: $slnPath"
-            exit 1
-        }
+      run: dotnet restore $env:sln_path
 
     - name: Build solution
       shell: pwsh
-      run: |
-        dotnet build "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln" --configuration Release
+      run: dotnet build $env:sln_path --configuration Release --no-restore
 
     - name: Run tests
       shell: pwsh
-      run: |
-        dotnet test "$env:GITHUB_WORKSPACE\PartsUnlimitedE2E\PartsUnlimited.sln" --no-build --verbosity normal
+      run: dotnet test $env:sln_path --no-build --verbosity normal
 
-    - name: Upload artifacts
+    - name: Publish build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
-        path: |
-          $env:GITHUB_WORKSPACE\PartsUnlimitedE2E\**\bin\Release\
+        path: '**/bin/Release/**'
