@@ -47,17 +47,17 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest
         shell: pwsh
 
-deploy:
-  needs: build  # Démarre après le build
-  runs-on: ubuntu-latest
-  steps:
-    - name: Log in to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-id: '6a24dac6-523a-427d-86ad-b9f505ccc373'
-        images: 'ibtissemamama/partsunlimited-web:latest'
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'my-azure-webapp'
+          images: 'ibtissemamama/partsunlimited-web:latest'
