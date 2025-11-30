@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Docker + ACI
 
 on:
   push:
@@ -29,8 +29,7 @@ jobs:
 
       - name: Build Website Only
         run: |
-          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
-            /t:Rebuild /p:Configuration=Release
+          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
         shell: pwsh
 
       - name: Build Docker Image
@@ -56,13 +55,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Azure
+      - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'my-azure-webapp'
-          images: '${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest'
+      - name: Deploy to Azure Container Instance
+        run: |
+          az container create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name partsunlimited-aci \
+            --image ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest \
+            --dns-name-label partsunlimited-aci-${{ github.run_id }} \
+            --ports 80 \
+            --cpu 1 \
+            --memory 1.5
