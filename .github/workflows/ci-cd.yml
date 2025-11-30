@@ -1,72 +1,26 @@
-name: CI/CD Docker + ACI
+name: CI/CD Docker + GHCR
 
 on:
   push:
-  pull_request:
+    branches: [release]
 
 jobs:
   build:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install .NET Framework 4.6.1 Dev Pack
-        run: choco install netfx-4.6.1-devpack -y
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1
-
-      - name: Restore NuGet Packages
-        run: |
-          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-          nuget restore $slnPath
-        shell: pwsh
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Build Website Only
-        run: |
-          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" /t:Rebuild /p:Configuration=Release
-        shell: pwsh
-
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
-        shell: pwsh
-
-      - name: Login to Docker Hub
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-        shell: pwsh
-
-      - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest
-        shell: pwsh
-
-  deploy:
-    needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Login to Azure
-        uses: azure/login@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy to Azure Container Instance
+      - name: Build and push Docker image
         run: |
-          az container create \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --name partsunlimited-aci \
-            --image ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest \
-            --dns-name-label partsunlimited-aci-${{ github.run_id }} \
-            --ports 80 \
-            --cpu 1 \
-            --memory 1.5
+          docker build -t ghcr.io/${{ github.repository_owner }}/partsunlimited-web:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/partsunlimited-web:latest
