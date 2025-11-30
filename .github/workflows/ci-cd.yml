@@ -60,4 +60,4 @@ deploy:
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'my-azure-webapp'
-        images: 'my-dockerhub-username/my-app:latest'
+        images: 'ibtissemamama/partsunlimited-web:latest'
