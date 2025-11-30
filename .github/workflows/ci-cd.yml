@@ -1,4 +1,4 @@
-name: CI/CD
+name: CII/CD
 
 on:
   push:
@@ -9,60 +9,60 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install .NET Framework 4.6.1 Dev Pack
-      run: choco install netfx-4.6.1-devpack -y
+      - name: Install .NET Framework 4.6.1 Dev Pack
+        run: choco install netfx-4.6.1-devpack -y
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
 
-    - name: Restore NuGet Packages
-      run: |
-        $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
-        nuget restore $slnPath
-      shell: pwsh
+      - name: Restore NuGet Packages
+        run: |
+          $slnPath = "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\PartsUnlimited.sln"
+          nuget restore $slnPath
+        shell: pwsh
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-    - name: Build Website Only (Skip DepValidation)
-      run: |
-        msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
-          /t:Rebuild /p:Configuration=Release
-      shell: pwsh
+      - name: Build Website Only
+        run: |
+          msbuild "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45\src\PartsUnlimitedWebsite\PartsUnlimitedWebsite.csproj" `
+            /t:Rebuild /p:Configuration=Release
+        shell: pwsh
 
-    - name: Build Docker Image
-      run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
-      shell: pwsh
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest "$env:GITHUB_WORKSPACE\PartsUnlimited-aspnet45"
+        shell: pwsh
 
-    - name: Login to Docker Hub
-      run: |
-        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      shell: pwsh
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        shell: pwsh
 
-    - name: Push Docker Image
-      run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest
-      shell: pwsh
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest
+        shell: pwsh
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Log in to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'my-azure-webapp'
-        images: '${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest'
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'my-azure-webapp'
+          images: '${{ secrets.DOCKER_USERNAME }}/partsunlimited-web:latest'
